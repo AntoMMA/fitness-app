@@ -232,5 +232,135 @@ content="width=device-width, initial-scale=1.0">
 
 </div>
 
+<script>
+
+/* =========================
+NAVIGAZIONE
+========================= */
+
+function vaiProfilo(){
+
+    window.location.href =
+        "profilo.html";
+
+}
+
+function vaiAllenamento(){
+
+    window.location.href =
+        "allenamento.html";
+
+}
+
+function vaiAlimentazione(){
+
+    window.location.href =
+        "alimentazione.html";
+
+}
+
+function vaiProgressi(){
+
+    window.location.href =
+        "progressi.html";
+
+}
+
+function vaiAnalisi(){
+
+    window.location.href =
+        "analisi.html";
+
+}
+
+/* =========================
+LOGOUT
+========================= */
+
+function logout(){
+
+    localStorage.removeItem(
+        "userId"
+    );
+
+    window.location.href =
+        "index.html";
+
+}
+
+/* =========================
+PROMEMORIA
+========================= */
+
+function impostaPromemoria(){
+
+    const orario =
+        document.getElementById(
+            "orarioAllenamento"
+        ).value;
+
+    if(!orario){
+
+        alert(
+            "Seleziona un orario"
+        );
+
+        return;
+
+    }
+
+    localStorage.setItem(
+        "promemoriaAllenamento",
+        orario
+    );
+
+    alert(
+        "Promemoria salvato"
+    );
+
+}
+
+/* =========================
+PDF
+========================= */
+
+async function generaReportPDF(){
+
+    const { jsPDF } =
+        window.jspdf;
+
+    const doc =
+        new jsPDF();
+
+    doc.setFontSize(22);
+
+    doc.text(
+        "FITNESS PERFORMANCE REPORT",
+        20,
+        20
+    );
+
+    doc.setFontSize(14);
+
+    doc.text(
+        "Report allenamento professionale",
+        20,
+        40
+    );
+
+    doc.text(
+        "Generato dalla Fitness AI App",
+        20,
+        55
+    );
+
+    doc.save(
+        "fitness-report.pdf"
+    );
+
+}
+
+</script>
+
 </body>
 </html>
