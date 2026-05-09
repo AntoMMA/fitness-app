@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>Profilo Utente Avanzato</title>
+
+<link rel="stylesheet" href="style.css">
+
+<meta http-equiv="Content-Security-Policy"
+content="
+default-src 'self' https://www.gstatic.com;
+script-src 'self' https://www.gstatic.com 'unsafe-inline';
+connect-src *;
+style-src 'self' 'unsafe-inline';
+">
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script src="firebase.js"></script>
+
+</head>
+<body>
+
+<div class="container">
+
+<h2>PROFILO FISICO AVANZATO</h2>
+
+<!-- DATI BASE -->
+
+<input
+type="number"
+id="eta"
+placeholder="Età"
+>
+
+<select id="sesso">
+
+<option value="">
+Sesso
+</option>
+
+<option>
+Maschio
+</option>
+
+<option>
+Femmina
+</option>
+
+</select>
+
+<input
+type="number"
+id="altezza"
+placeholder="Altezza (cm)"
+>
+
+<input
+type="number"
+id="peso"
+placeholder="Peso (kg)"
+>
+
+<!-- DATI FISICI -->
+
+<input
+type="number"
+id="massa_grassa"
+placeholder="Percentuale massa grassa (%)"
+>
+
+<input
+type="number"
+id="vita"
+placeholder="Circonferenza vita (cm)"
+>
+
+<input
+type="number"
+id="torace"
+placeholder="Circonferenza torace (cm)"
+>
+
+<input
+type="number"
+id="braccia"
+placeholder="Circonferenza braccia (cm)"
+>
+
+<!-- METABOLISMO -->
+
+<select id="metabolismo">
+
+<option value="">
+Tipo metabolismo
+</option>
+
+<option>
+Lento
+</option>
+
+<option>
+Normale
+</option>
+
+<option>
+Veloce
+</option>
+
+</select>
+
+<!-- ATTIVITÀ -->
+
+<select id="livello">
+
+<option value="">
+Livello attività
+</option>
+
+<option>
+Principiante
+</option>
+
+<option>
+Intermedio
+</option>
+
+<option>
+Avanzato
+</option>
+
+</select>
+
+<input
+type="number"
+id="allenamenti_settimana"
+placeholder="Allenamenti a settimana"
+>
+
+<select id="obiettivo">
+
+<option value="">
+Obiettivo
+</option>
+
+<option>
+Aumento massa
+</option>
+
+<option>
+Dimagrimento
+</option>
+
+<option>
+Performance
+</option>
+
+<option>
+Mantenimento
+</option>
+
+</select>
+
+<!-- STILE DI VITA -->
+
+<input
+type="number"
+id="sonno"
+placeholder="Ore di sonno per notte"
+>
+
+<select id="stress">
+
+<option value="">
+Livello stress
+</option>
+
+<option>
+Basso
+</option>
+
+<option>
+Medio
+</option>
+
+<option>
+Alto
+</option>
+
+</select>
+
+<br><br>
+
+<button
+class="btn-primary"
+onclick="salvaProfilo()">
+
+Salva profilo
+
+</button>
+
+<button
+class="btn-secondary"
+onclick="tornaMenu()">
+
+Torna al menu
+
+</button>
+
+</div>
+
+<script>
+
+/* =========================
+PROTEZIONE ACCESSO
+========================= */
+
+window.onload = function () {
+
+    const userId =
+        localStorage.getItem(
+            "userId"
+        );
+
+    if (!userId) {
+
+        window.location.href =
+            "index.html";
+
+        return;
+
+    }
+
+    caricaProfilo();
+
+};
+
+/* =========================
+SALVA PROFILO
+========================= */
+
+async function salvaProfilo() {
+
+    try {
+
+        const userId =
+            localStorage.getItem(
+                "userId"
+            );
+
+        if (!userId) {
+
+            alert(
+                "Utente non trovato"
+            );
+
+            return;
+
+        }
+
+        const eta =
+            document.getElementById(
+                "eta"
+            ).value;
+
+        const altezza =
+            document.getElementById(
+                "altezza"
+            ).value;
+
+        const peso =
+            document.getElementById(
+                "peso"
+            ).value;
+
+        if (!eta || !altezza || !peso) {
+
+            alert(
+                "Inserisci almeno Età, Altezza e Peso"
+            );
+
+            return;
+
+        }
+
+        const dati = {
+
+            userId: userId,
+
+            eta: eta,
+
+            sesso:
+                document.getElementById(
+                    "sesso"
+                ).value,
+
+            altezza: altezza,
+
+            peso: peso,
+
+            massa_grassa:
+                document.getElementById(
+                    "massa_grassa"
+                ).value,
+
+            vita:
+                document.getElementById(
+                    "vita"
+                ).value,
+
+            torace:
+                document.getElementById(
+                    "torace"
+                ).value,
+
+            braccia:
+                document.getElementById(
+                    "braccia"
+                ).value,
+
+            metabolismo:
+                document.getElementById(
+                    "metabolismo"
+                ).value,
+
+            livello:
+                document.getElementById(
+                    "livello"
+                ).value,
+
+            allenamenti_settimana:
+                document.getElementById(
+                    "allenamenti_settimana"
+                ).value,
+
+            obiettivo:
+                document.getElementById(
+                    "obiettivo"
+                ).value,
+
+            sonno:
+                document.getElementById(
+                    "sonno"
+                ).value,
+
+            stress:
+                document.getElementById(
+                    "stress"
+                ).value,
+
+            aggiornato:
+                new Date()
+
+        };
+
+        const snapshot =
+            await db.collection(
+                "profili"
+            )
+
+            .where(
+                "userId",
+                "==",
+                userId
+            )
+
+            .get();
+
+        if (!snapshot.empty) {
+
+            snapshot.forEach(doc => {
+
+                db.collection(
+                    "profili"
+                )
+
+                .doc(doc.id)
+
+                .update(dati);
+
+            });
+
+        }
+
+        else {
+
+            await db.collection(
+                "profili"
+            )
+
+            .add(dati);
+
+        }
+
+        alert(
+            "Profilo salvato correttamente"
+        );
+
+    }
+
+    catch (errore) {
+
+        console.error(
+            "Errore salvataggio:",
+            errore
+        );
+
+        alert(
+            "Errore durante il salvataggio"
+        );
+
+    }
+
+}
+
+/* =========================
+CARICA PROFILO
+========================= */
+
+async function caricaProfilo() {
+
+    try {
+
+        const userId =
+            localStorage.getItem(
+                "userId"
+            );
+
+        if (!userId)
+            return;
+
+        const snapshot =
+            await db.collection(
+                "profili"
+            )
+
+            .where(
+                "userId",
+                "==",
+                userId
+            )
+
+            .get();
+
+        if (!snapshot.empty) {
+
+            snapshot.forEach(doc => {
+
+                const d =
+                    doc.data();
+
+                document.getElementById(
+                    "eta"
+                ).value =
+                    d.eta || "";
+
+                document.getElementById(
+                    "sesso"
+                ).value =
+                    d.sesso || "";
+
+                document.getElementById(
+                    "altezza"
+                ).value =
+                    d.altezza || "";
+
+                document.getElementById(
+                    "peso"
+                ).value =
+                    d.peso || "";
+
+                document.getElementById(
+                    "massa_grassa"
+                ).value =
+                    d.massa_grassa || "";
+
+                document.getElementById(
+                    "vita"
+                ).value =
+                    d.vita || "";
+
+                document.getElementById(
+                    "torace"
+                ).value =
+                    d.torace || "";
+
+                document.getElementById(
+                    "braccia"
+                ).value =
+                    d.braccia || "";
+
+                document.getElementById(
+                    "metabolismo"
+                ).value =
+                    d.metabolismo || "";
+
+                document.getElementById(
+                    "livello"
+                ).value =
+                    d.livello || "";
+
+                document.getElementById(
+                    "allenamenti_settimana"
+                ).value =
+                    d.allenamenti_settimana || "";
+
+                document.getElementById(
+                    "obiettivo"
+                ).value =
+                    d.obiettivo || "";
+
+                document.getElementById(
+                    "sonno"
+                ).value =
+                    d.sonno || "";
+
+                document.getElementById(
+                    "stress"
+                ).value =
+                    d.stress || "";
+
+            });
+
+        }
+
+    }
+
+    catch (errore) {
+
+        console.error(
+            "Errore caricamento:",
+            errore
+        );
+
+    }
+
+}
+
+/* ========================= */
+
+function tornaMenu() {
+
+    window.location.href =
+        "dashboard.html";
+
+}
+
+</script>
+
+</body>
+</html>

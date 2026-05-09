@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>Registrazione Utente</title>
+
+<link rel="stylesheet" href="style.css">
+
+<meta http-equiv="Content-Security-Policy"
+content="
+default-src 'self' https://www.gstatic.com;
+script-src 'self' https://www.gstatic.com 'unsafe-inline';
+connect-src *;
+style-src 'self' 'unsafe-inline';
+">
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script src="firebase.js"></script>
+
+</head>
+<body>
+
+<div class="container">
+
+<h2>REGISTRAZIONE UTENTE</h2>
+
+<input
+type="text"
+id="nome"
+placeholder="Nome"
+autocomplete="given-name"
+>
+
+<input
+type="text"
+id="cognome"
+placeholder="Cognome"
+autocomplete="family-name"
+>
+
+<button
+class="btn-primary"
+onclick="registraUtente()">
+
+Registrati
+
+</button>
+
+<br><br>
+
+<div
+id="boxCodice"
+style="display:none;">
+
+<h3>Codice di accesso</h3>
+
+<input
+type="text"
+id="codiceGenerato"
+readonly
+>
+
+<br><br>
+
+<button
+class="btn-secondary"
+onclick="copiaCodice()">
+
+Copia codice
+
+</button>
+
+</div>
+
+<br><br>
+
+<button
+class="btn-secondary"
+onclick="tornaLogin()">
+
+Torna al login
+
+</button>
+
+</div>
+
+<script>
+
+/* =========================
+GENERAZIONE CODICE
+========================= */
+
+function generaCodiceUnivoco() {
+
+    const caratteri =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
+    let codice =
+        "PASS-";
+
+    for (let i = 0; i < 5; i++) {
+
+        codice += caratteri.charAt(
+
+            Math.floor(
+                Math.random()
+                * caratteri.length
+            )
+
+        );
+
+    }
+
+    return codice;
+
+}
+
+/* =========================
+REGISTRAZIONE
+========================= */
+
+async function registraUtente() {
+
+    try {
+
+        let nome =
+            document.getElementById("nome")
+            .value
+            .trim();
+
+        let cognome =
+            document.getElementById("cognome")
+            .value
+            .trim();
+
+        if (!nome || !cognome) {
+
+            alert(
+                "Inserisci Nome e Cognome"
+            );
+
+            return;
+
+        }
+
+        /* CONTROLLO DUPLICATI */
+
+        const controllo =
+            await db.collection("users")
+
+                .where("nome", "==", nome)
+
+                .where("cognome", "==", cognome)
+
+                .get();
+
+        if (!controllo.empty) {
+
+            alert(
+                "Utente già registrato"
+            );
+
+            return;
+
+        }
+
+        const codice =
+            generaCodiceUnivoco();
+
+        const docRef =
+            await db.collection("users")
+                .add({
+
+                    nome: nome,
+                    cognome: cognome,
+                    password: codice,
+
+                    dataRegistrazione:
+                        new Date()
+
+                });
+
+        const userId =
+            docRef.id;
+
+        /* SALVATAGGIO SESSIONE */
+
+        localStorage.setItem(
+            "userId",
+            userId
+        );
+
+        localStorage.setItem(
+            "utenteNome",
+            nome
+        );
+
+        localStorage.setItem(
+            "utenteCognome",
+            cognome
+        );
+
+        document.getElementById(
+            "codiceGenerato"
+        ).value = codice;
+
+        document.getElementById(
+            "boxCodice"
+        ).style.display =
+            "block";
+
+    }
+
+    catch (errore) {
+
+        console.error(
+            "Errore registrazione:",
+            errore
+        );
+
+        alert(
+            "Errore durante la registrazione"
+        );
+
+    }
+
+}
+
+/* =========================
+COPIA CODICE
+========================= */
+
+function copiaCodice() {
+
+    const input =
+        document.getElementById(
+            "codiceGenerato"
+        );
+
+    input.select();
+
+    navigator.clipboard.writeText(
+        input.value
+    );
+
+    alert(
+        "Codice copiato"
+    );
+
+}
+
+/* ========================= */
+
+function tornaLogin() {
+
+    window.location.href =
+        "index.html";
+
+}
+
+</script>
+
+</body>
+</html>

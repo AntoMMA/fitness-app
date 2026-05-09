@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>Login</title>
+
+<link rel="stylesheet" href="style.css">
+
+<meta http-equiv="Content-Security-Policy"
+content="
+default-src 'self' https://www.gstatic.com https://cdnjs.cloudflare.com;
+script-src 'self' https://www.gstatic.com https://cdnjs.cloudflare.com 'unsafe-inline';
+connect-src *;
+style-src 'self' 'unsafe-inline';
+">
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script src="firebase.js"></script>
+
+</head>
+<body>
+
+<div class="container">
+
+<h2>ACCESSO UTENTE</h2>
+
+<input
+type="text"
+id="nome"
+placeholder="Nome"
+autocomplete="given-name"
+>
+
+<input
+type="text"
+id="cognome"
+placeholder="Cognome"
+autocomplete="family-name"
+>
+
+<input
+type="password"
+id="password"
+placeholder="Codice accesso"
+autocomplete="current-password"
+>
+
+<br>
+
+<label
+style="
+display:flex;
+align-items:center;
+gap:8px;
+margin-top:10px;
+">
+
+<input
+type="checkbox"
+id="ricorda"
+>
+
+Ricorda dati di accesso
+
+</label>
+
+<br>
+
+<button
+id="btnLogin"
+class="btn-primary"
+onclick="login()">
+
+Accedi
+
+</button>
+
+<br><br>
+
+<button
+class="btn-secondary"
+onclick="vaiRegistrazione()">
+
+Registrati
+
+</button>
+
+</div>
+
+<script>
+
+/* ============================
+AVVIO PAGINA
+============================ */
+
+window.onload = function () {
+
+    const userId =
+        localStorage.getItem("userId");
+
+    /* LOGIN AUTOMATICO */
+
+    if (userId) {
+
+        window.location.href =
+            "dashboard.html";
+
+        return;
+
+    }
+
+    /* CARICA CREDENZIALI */
+
+    const nome =
+        localStorage.getItem("login_nome");
+
+    const cognome =
+        localStorage.getItem("login_cognome");
+
+    const password =
+        localStorage.getItem("login_password");
+
+    if (nome)
+        document.getElementById("nome").value = nome;
+
+    if (cognome)
+        document.getElementById("cognome").value = cognome;
+
+    if (password)
+        document.getElementById("password").value = password;
+
+    if (nome || cognome || password)
+        document.getElementById("ricorda").checked = true;
+
+};
+
+/* ============================
+LOGIN
+============================ */
+
+async function login() {
+
+    try {
+
+        const btn =
+            document.getElementById(
+                "btnLogin"
+            );
+
+        btn.disabled = true;
+
+        const nome =
+            document.getElementById("nome")
+            .value
+            .trim();
+
+        const cognome =
+            document.getElementById("cognome")
+            .value
+            .trim();
+
+        const password =
+            document.getElementById("password")
+            .value
+            .trim();
+
+        const ricorda =
+            document.getElementById("ricorda")
+            .checked;
+
+        if (
+            !nome ||
+            !cognome ||
+            !password
+        ) {
+
+            alert(
+                "Inserisci Nome, Cognome e Codice accesso"
+            );
+
+            btn.disabled = false;
+
+            return;
+
+        }
+
+        const snapshot =
+            await db.collection("users")
+
+                .where("nome", "==", nome)
+
+                .where("cognome", "==", cognome)
+
+                .where("password", "==", password)
+
+                .get();
+
+        if (snapshot.empty) {
+
+            alert(
+                "Credenziali non valide"
+            );
+
+            btn.disabled = false;
+
+            return;
+
+        }
+
+        const doc =
+            snapshot.docs[0];
+
+        const userId =
+            doc.id;
+
+        /* SALVA SESSIONE */
+
+        localStorage.setItem(
+            "userId",
+            userId
+        );
+
+        localStorage.setItem(
+            "utenteNome",
+            nome
+        );
+
+        localStorage.setItem(
+            "utenteCognome",
+            cognome
+        );
+
+        /* RICORDA CREDENZIALI */
+
+        if (ricorda) {
+
+            localStorage.setItem(
+                "login_nome",
+                nome
+            );
+
+            localStorage.setItem(
+                "login_cognome",
+                cognome
+            );
+
+            localStorage.setItem(
+                "login_password",
+                password
+            );
+
+        }
+
+        else {
+
+            localStorage.removeItem(
+                "login_nome"
+            );
+
+            localStorage.removeItem(
+                "login_cognome"
+            );
+
+            localStorage.removeItem(
+                "login_password"
+            );
+
+        }
+
+        window.location.href =
+            "dashboard.html";
+
+    }
+
+    catch (errore) {
+
+        console.error(
+            "Errore login:",
+            errore
+        );
+
+        alert(
+            "Errore durante l'accesso"
+        );
+
+        document.getElementById(
+            "btnLogin"
+        ).disabled = false;
+
+    }
+
+}
+
+/* ============================
+NAVIGAZIONE
+============================ */
+
+function vaiRegistrazione() {
+
+    window.location.href =
+        "register.html";
+
+}
+
+</script>
+
+</body>
+</html>

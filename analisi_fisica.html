@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Analisi Fisica</title>
+
+<link rel="stylesheet" href="style.css">
+
+<meta http-equiv="Content-Security-Policy"
+content="
+default-src 'self' https://www.gstatic.com;
+script-src 'self' https://www.gstatic.com 'unsafe-inline';
+connect-src *;
+style-src 'self' 'unsafe-inline';
+">
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script src="firebase.js"></script>
+
+</head>
+<body>
+
+<div class="container">
+
+<h2>ANALISI FISICA COMPLETA</h2>
+
+<p>
+Premi il pulsante per analizzare la tua composizione corporea.
+</p>
+
+<button
+class="btn-primary"
+onclick="analizzaFisico()">
+
+Analizza fisico
+
+</button>
+
+<br><br>
+
+<div id="risultato" style="display:none;">
+
+<h3>RISULTATO ANALISI</h3>
+
+<p id="bmi"></p>
+<p id="categoria"></p>
+<p id="massa_magra"></p>
+<p id="massa_grassa"></p>
+
+</div>
+
+<button
+class="btn-secondary"
+onclick="tornaMenu()">
+
+Torna al menu
+
+</button>
+
+</div>
+
+<script>
+
+/* =========================
+ANALISI FISICA
+========================= */
+
+async function analizzaFisico() {
+
+    try {
+
+        const userId =
+            localStorage.getItem("userId");
+
+        if (!userId) {
+
+            alert("Utente non trovato");
+
+            return;
+
+        }
+
+        const snapshot =
+            await db.collection("profili")
+
+                .where("userId", "==", userId)
+
+                .get();
+
+        if (snapshot.empty) {
+
+            alert("Profilo non trovato");
+
+            return;
+
+        }
+
+        snapshot.forEach(doc => {
+
+            const dati = doc.data();
+
+            const peso =
+                parseFloat(dati.peso);
+
+            const altezzaCm =
+                parseFloat(dati.altezza);
+
+            const massaGrassaPerc =
+                parseFloat(dati.massa_grassa);
+
+            if (
+                !peso ||
+                !altezzaCm ||
+                !massaGrassaPerc
+            ) {
+
+                alert(
+                    "Completa i dati nel profilo"
+                );
+
+                return;
+
+            }
+
+            const altezza =
+                altezzaCm / 100;
+
+            const bmi =
+                peso / (altezza * altezza);
+
+            let categoria = "";
+
+            if (bmi < 18.5)
+                categoria = "Sottopeso";
+
+            else if (bmi < 25)
+                categoria = "Normopeso";
+
+            else if (bmi < 30)
+                categoria = "Sovrappeso";
+
+            else
+                categoria = "Obesità";
+
+            let massaGrassa =
+                peso * (massaGrassaPerc / 100);
+
+            let massaMagra =
+                peso - massaGrassa;
+
+            document.getElementById("bmi").innerText =
+                "BMI: " +
+                bmi.toFixed(1);
+
+            document.getElementById("categoria").innerText =
+                "Categoria: " +
+                categoria;
+
+            document.getElementById("massa_magra").innerText =
+                "Massa magra: " +
+                massaMagra.toFixed(1) +
+                " kg";
+
+            document.getElementById("massa_grassa").innerText =
+                "Massa grassa: " +
+                massaGrassa.toFixed(1) +
+                " kg";
+
+            document.getElementById("risultato").style.display =
+                "block";
+
+        });
+
+    }
+
+    catch (errore) {
+
+        console.error(
+            "Errore analisi fisica:",
+            errore
+        );
+
+        alert(
+            "Errore durante l'analisi"
+        );
+
+    }
+
+}
+
+/* ========================= */
+
+function tornaMenu() {
+
+    window.location.href =
+        "dashboard.html";
+
+}
+
+</script>
+
+</body>
+</html>

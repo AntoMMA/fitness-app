@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Monitoraggio Progressi</title>
+
+<link rel="stylesheet" href="style.css">
+
+<meta http-equiv="Content-Security-Policy"
+content="
+default-src 'self' https://www.gstatic.com https://cdn.jsdelivr.net;
+script-src 'self' https://www.gstatic.com https://cdn.jsdelivr.net 'unsafe-inline';
+connect-src *;
+style-src 'self' 'unsafe-inline';
+">
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script src="firebase.js"></script>
+
+<!-- GRAFICI -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+#graficoPeso {
+    width: 100%;
+    height: 300px;
+}
+</style>
+
+</head>
+<body>
+
+<div class="container">
+
+<h2>MONITORAGGIO PROGRESSI</h2>
+
+<input type="number" id="peso" placeholder="Peso (kg)">
+<input type="number" id="massa_grassa" placeholder="Massa grassa (%)">
+
+<input type="number" id="vita" placeholder="Circonferenza vita (cm)">
+<input type="number" id="torace" placeholder="Circonferenza torace (cm)">
+<input type="number" id="braccia" placeholder="Circonferenza braccia (cm)">
+
+<button class="btn-primary" onclick="salvaProgressi()">
+Salva progressi
+</button>
+
+<br><br>
+
+<button class="btn-secondary" onclick="caricaStorico()">
+Aggiorna grafico
+</button>
+
+<br><br>
+
+<canvas id="graficoPeso"></canvas>
+
+<br>
+
+<button class="btn-secondary" onclick="tornaMenu()">
+Torna al menu
+</button>
+
+</div>
+
+<script>
+
+let grafico = null;
+
+/* =========================
+SALVA PROGRESSI
+========================= */
+
+async function salvaProgressi() {
+
+    try {
+
+        const userId =
+            localStorage.getItem("userId");
+
+        if (!userId) {
+
+            alert("Utente non trovato");
+            return;
+
+        }
+
+        await db.collection("progressi").add({
+
+            userId: userId,
+
+            peso:
+                document.getElementById("peso").value,
+
+            massa_grassa:
+                document.getElementById("massa_grassa").value,
+
+            vita:
+                document.getElementById("vita").value,
+
+            torace:
+                document.getElementById("torace").value,
+
+            braccia:
+                document.getElementById("braccia").value,
+
+            data:
+                new Date()
+
+        });
+
+        alert("Progressi salvati");
+
+        caricaStorico();
+
+    }
+
+    catch (errore) {
+
+        console.error(
+            "Errore salvataggio:",
+            errore
+        );
+
+    }
+
+}
+
+/* =========================
+CARICA STORICO
+========================= */
+
+async function caricaStorico() {
+
+    try {
+
+        const userId =
+            localStorage.getItem("userId");
+
+        if (!userId) return;
+
+        const snapshot =
+            await db.collection("progressi")
+
+                .where("userId", "==", userId)
+
+                .get();
+
+        let date = [];
+        let pesi = [];
+
+        snapshot.forEach(doc => {
+
+            const d = doc.data();
+
+            date.push(
+                new Date(d.data)
+                .toLocaleDateString()
+            );
+
+            pesi.push(
+                parseFloat(d.peso)
+            );
+
+        });
+
+        disegnaGrafico(date, pesi);
+
+    }
+
+    catch (errore) {
+
+        console.error(
+            "Errore caricamento:",
+            errore
+        );
+
+    }
+
+}
+
+/* =========================
+GRAFICO
+========================= */
+
+function disegnaGrafico(date, pesi) {
+
+    const ctx =
+        document.getElementById("graficoPeso");
+
+    if (grafico !== null) {
+
+        grafico.destroy();
+
+    }
+
+    grafico = new Chart(ctx, {
+
+        type: "line",
+
+        data: {
+
+            labels: date,
+
+            datasets: [
+
+                {
+
+                    label: "Peso (kg)",
+
+                    data: pesi,
+
+                    borderWidth: 2,
+
+                    tension: 0.3
+
+                }
+
+            ]
+
+        },
+
+        options: {
+
+            responsive: true,
+
+            maintainAspectRatio: false
+
+        }
+
+    });
+
+}
+
+/* ========================= */
+
+function tornaMenu() {
+
+    window.location.href =
+        "dashboard.html";
+
+}
+
+</script>
+
+</body>
+</html>

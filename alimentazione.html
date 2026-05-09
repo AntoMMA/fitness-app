@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>Alimentazione Professionale</title>
+
+<link rel="stylesheet" href="style.css">
+
+<meta http-equiv="Content-Security-Policy"
+content="
+default-src 'self' https://www.gstatic.com;
+script-src 'self' https://www.gstatic.com 'unsafe-inline';
+connect-src *;
+style-src 'self' 'unsafe-inline';
+">
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script src="firebase.js"></script>
+
+<script src="js/nutritionEngine.js"></script>
+
+</head>
+<body>
+
+<div class="container">
+
+<h2>ALIMENTAZIONE PERSONALIZZATA</h2>
+
+<button
+class="btn-primary"
+onclick="calcolaNutrizione()">
+
+Calcola nutrizione
+
+</button>
+
+<button
+class="btn-secondary"
+onclick="generaPianoPasti()">
+
+Genera piano alimentare
+
+</button>
+
+<button
+class="btn-secondary"
+onclick="caricaUltimoPiano()">
+
+Il mio piano di Alimentazione
+
+</button>
+
+<br><br>
+
+<div id="risultato"
+style="display:none;">
+
+<h3>RISULTATO</h3>
+
+<p id="tipo"></p>
+<p id="bmr"></p>
+<p id="calorie"></p>
+<p id="proteine"></p>
+<p id="carboidrati"></p>
+<p id="grassi"></p>
+
+<br>
+
+<div id="pianoPasti"
+style="display:none;">
+
+<h3>Piano alimentare</h3>
+
+<pre id="menu"></pre>
+
+</div>
+
+</div>
+
+<button
+class="btn-secondary"
+onclick="tornaMenu()">
+
+Torna al menu
+
+</button>
+
+</div>
+
+<script>
+
+/* =========================
+PROTEZIONE ACCESSO
+========================= */
+
+window.onload = function () {
+
+    const userId =
+        localStorage.getItem("userId");
+
+    if (!userId) {
+
+        window.location.href =
+            "index.html";
+
+    }
+
+};
+
+/* =========================
+CALCOLO NUTRIZIONE
+========================= */
+
+async function calcolaNutrizione() {
+
+    try {
+
+        const userId =
+            localStorage.getItem(
+                "userId"
+            );
+
+        const snapshot =
+            await db.collection(
+                "profili"
+            )
+
+            .where(
+                "userId",
+                "==",
+                userId
+            )
+
+            .get();
+
+        if(snapshot.empty){
+
+            alert(
+                "Profilo non trovato"
+            );
+
+            return;
+
+        }
+
+        let dati;
+
+        snapshot.forEach(doc => {
+
+            dati = doc.data();
+
+        });
+
+        /* =====================
+           AI NUTRITION
+        ===================== */
+
+        const nutrizione =
+            nutritionEngine.calculate(
+                dati
+            );
+
+        /* =====================
+           UI
+        ===================== */
+
+        document.getElementById(
+            "tipo"
+        ).innerText =
+            "Piano nutrizionale AI";
+
+        document.getElementById(
+            "bmr"
+        ).innerText =
+            "Calorie giornaliere: "
+            + nutrizione.calorie;
+
+        document.getElementById(
+            "calorie"
+        ).innerText =
+            "Proteine: "
+            + nutrizione.proteine
+            + "g";
+
+        document.getElementById(
+            "proteine"
+        ).innerText =
+            "Carboidrati: "
+            + nutrizione.carboidrati
+            + "g";
+
+        document.getElementById(
+            "carboidrati"
+        ).innerText =
+            "Grassi: "
+            + nutrizione.grassi
+            + "g";
+
+        document.getElementById(
+            "grassi"
+        ).innerText =
+            "Obiettivo: "
+            + dati.obiettivo;
+
+        document.getElementById(
+            "risultato"
+        ).style.display =
+            "block";
+
+    }
+
+    catch(errore){
+
+        console.error(
+            errore
+        );
+
+    }
+
+}
+
+/* =========================
+GENERAZIONE PASTI
+========================= */
+
+async function generaPianoPasti(){
+
+    try{
+
+        const userId =
+            localStorage.getItem(
+                "userId"
+            );
+
+        const snapshot =
+            await db.collection(
+                "profili"
+            )
+
+            .where(
+                "userId",
+                "==",
+                userId
+            )
+
+            .get();
+
+        if(snapshot.empty){
+
+            alert(
+                "Profilo non trovato"
+            );
+
+            return;
+
+        }
+
+        let dati;
+
+        snapshot.forEach(doc => {
+
+            dati = doc.data();
+
+        });
+
+        const pasti =
+            nutritionEngine.generateMeals(
+                dati
+            );
+
+        document.getElementById(
+            "menu"
+        ).innerHTML = `
+
+        ${pasti.map(pasto => `
+
+        <div class="card"
+        style="margin-bottom:15px;">
+
+        ${pasto}
+
+        </div>
+
+        `).join("")}
+
+        `;
+
+        document.getElementById(
+            "pianoPasti"
+        ).style.display =
+            "block";
+
+    }
+
+    catch(errore){
+
+        console.error(
+            errore
+        );
+
+    }
+
+}
+
+/* =========================
+CARICA PIANO
+========================= */
+
+async function caricaUltimoPiano() {
+
+    try {
+
+        console.log("Caricamento piano alimentare...");
+
+        const userId =
+            localStorage.getItem("userId");
+
+        if (!userId) {
+
+            alert("Utente non trovato");
+            return;
+
+        }
+
+        const snapshot =
+            await db.collection(
+                "piani_alimentazione"
+            )
+
+            .where(
+                "userId",
+                "==",
+                userId
+            )
+
+            .orderBy(
+                "data",
+                "desc"
+            )
+
+            .limit(1)
+
+            .get();
+
+        console.log(
+            "Documenti trovati:",
+            snapshot.size
+        );
+
+        if (snapshot.empty) {
+
+            alert(
+                "Nessun piano salvato"
+            );
+
+            return;
+
+        }
+
+        snapshot.forEach(doc => {
+
+            const dati =
+                doc.data();
+
+            console.log(
+                "Piano trovato:",
+                dati
+            );
+
+            document.getElementById(
+                "menu"
+            ).innerText =
+                dati.piano;
+
+            document.getElementById(
+                "risultato"
+            ).style.display =
+                "block";
+
+            document.getElementById(
+                "pianoPasti"
+            ).style.display =
+                "block";
+
+        });
+
+    }
+
+    catch (errore) {
+
+        console.error(
+            "Errore caricamento piano:",
+            errore
+        );
+
+        alert(
+            "Errore caricamento piano"
+        );
+
+    }
+
+}
+
+function tornaMenu() {
+
+    window.location.href =
+        "dashboard.html";
+
+}
+
+</script>
+
+</body>
+</html>

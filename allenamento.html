@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>Allenamento Personalizzato</title>
+
+<link rel="stylesheet" href="style.css">
+
+<meta http-equiv="Content-Security-Policy"
+content="
+default-src 'self' https://www.gstatic.com;
+script-src 'self' https://www.gstatic.com 'unsafe-inline';
+connect-src *;
+style-src 'self' 'unsafe-inline';
+">
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script src="firebase.js"></script>
+
+<script src="js/exerciseDB.js"></script>
+
+<script src="js/trainingEngine.js"></script>
+
+<script src="js/progressionEngine.js"></script>
+
+<script src="js/aiCoach.js"></script>
+
+</head>
+<body>
+
+<div class="container">
+
+<h2>PROGRAMMA ALLENAMENTO PERSONALIZZATO</h2>
+
+<p>
+
+Il sistema genera un piano basato su:
+
+<br>
+
+Tipo fisico  
+Obiettivo  
+Livello  
+Recupero  
+Progressi  
+
+</p>
+
+<button
+class="btn-primary"
+onclick="generaAllenamento()">
+
+Genera allenamento
+
+</button>
+
+<button
+class="btn-secondary"
+onclick="progressioneAllenamento()">
+
+Adatta allenamento in base ai progressi
+
+</button>
+
+<button
+class="btn-secondary"
+onclick="caricaUltimoAllenamento()">
+
+Il mio piano di Allenamento
+
+</button>
+
+<br><br>
+
+<div
+id="coachBox"
+class="card"
+style="
+display:none;
+margin-bottom:25px;
+">
+
+<h3>
+AI FITNESS COACH
+</h3>
+
+<br>
+
+<div id="coachContent">
+
+</div>
+
+</div>
+
+<div
+class="card"
+id="workoutProgressBox"
+style="
+display:none;
+margin-bottom:20px;
+">
+
+<h3>
+AVANZAMENTO WORKOUT
+</h3>
+
+<br>
+
+<div style="
+width:100%;
+height:25px;
+background:#1e293b;
+border-radius:999px;
+overflow:hidden;
+">
+
+<div
+id="workoutProgressBar"
+style="
+width:0%;
+height:100%;
+background:#22c55e;
+transition:0.3s;
+">
+
+</div>
+
+</div>
+
+<br>
+
+<p id="workoutProgressText">
+
+0% completato
+
+</p>
+
+</div>
+
+<div
+id="programma"
+style="display:none;">
+
+<h3>
+PROGRAMMA PREMIUM
+</h3>
+
+<p style="
+margin-top:10px;
+margin-bottom:20px;
+color:#22c55e;
+font-weight:bold;
+">
+
+Fisico:
+<span id="bodyTypeText"></span>
+
+</p>
+
+<div
+id="allenamentoCards"
+class="menu-grid">
+
+</div>
+
+</div>
+
+<button
+class="btn-secondary"
+onclick="tornaMenu()">
+
+Torna al menu
+
+</button>
+
+</div>
+
+<script>
+
+/* =========================
+PROTEZIONE ACCESSO
+========================= */
+
+window.onload = function () {
+
+    const userId =
+        localStorage.getItem("userId");
+
+    if (!userId) {
+
+        window.location.href =
+            "index.html";
+
+        return;
+
+    }
+
+};
+
+/* =========================
+GENERAZIONE ALLENAMENTO
+========================= */
+
+async function generaAllenamento() {
+
+    try {
+
+        const userId =
+            localStorage.getItem(
+                "userId"
+            );
+
+        const snapshot =
+            await db.collection("profili")
+
+                .where(
+                    "userId",
+                    "==",
+                    userId
+                )
+
+                .get();
+
+        if (snapshot.empty) {
+
+            alert(
+                "Profilo non trovato"
+            );
+
+            return;
+
+        }
+
+        let dati;
+
+        snapshot.forEach(doc => {
+
+            dati = doc.data();
+
+        });
+
+        /* =========================
+           AI TRAINING ENGINE
+        ========================= */
+
+        const aiWorkout =
+            trainingEngine.generateWorkout(
+                dati
+            );
+
+            const coach =
+    aiCoach.analyze(
+        dati
+    );
+
+        const split =
+            aiWorkout.split;
+
+        const volume =
+            aiWorkout.volume;
+
+        const intensity =
+            aiWorkout.intensity;
+
+            const noteAI =
+    aiWorkout.note;
+
+const bodyType =
+    aiWorkout.bodyType;
+
+        /* =========================
+           CONTAINER
+        ========================= */
+
+        document.getElementById(
+    "coachBox"
+).style.display = "block";
+
+document.getElementById(
+    "coachContent"
+).innerHTML = `
+
+<div class="stats">
+
+    <div class="stat-box">
+
+        <div class="stat-number">
+            ${coach.score}%
+        </div>
+
+        <div class="stat-label">
+            Readiness Score
+        </div>
+
+    </div>
+
+    <div class="stat-box">
+
+        <div class="stat-number">
+            ${coach.stato}
+        </div>
+
+        <div class="stat-label">
+            Stato Recupero
+        </div>
+
+    </div>
+
+</div>
+
+<br>
+
+${coach.messaggi.map(msg => `
+
+<div class="badge">
+${msg}
+</div>
+
+`).join("")}
+
+`;
+
+        const container =
+            document.getElementById(
+                "allenamentoCards"
+            );
+
+        container.innerHTML = "";
+
+        document.getElementById(
+    "bodyTypeText"
+).innerText =
+    bodyType;
+
+        /* =========================
+           GENERAZIONE CARD
+        ========================= */
+
+        split.forEach(giorno => {
+
+    container.innerHTML += `
+
+    <div class="card"
+    style="
+    margin-bottom:30px;
+    ">
+
+    <h2 style="
+    color:#22c55e;
+    margin-bottom:20px;
+    ">
+
+    ${giorno}
+
+    </h2>
+
+    <div class="menu-grid">
+
+    ${exerciseDatabase
+
+        .filter(
+            ex =>
+            ex.gruppo === giorno
+        )
+
+        .map((ex,index) => {
+
+        const compound =
+            trainingEngine.isCompound(
+                ex
+            );
+
+        let reps;
+        let recupero;
+
+        if(compound){
+
+            reps =
+                aiWorkout
+                .trainingData
+                .multiarticolari
+                .reps;
+
+            recupero =
+                aiWorkout
+                .trainingData
+                .multiarticolari
+                .recupero;
+
+        }
+
+        else{
+
+            reps =
+                aiWorkout
+                .trainingData
+                .complementari
+                .reps;
+
+            recupero =
+                aiWorkout
+                .trainingData
+                .complementari
+                .recupero;
+
+        }
+
+        return `
+
+        <div class="exercise-card">
+
+            <img
+                src="${ex.gif}"
+                class="exercise-image"
+            >
+
+            <div class="exercise-content">
+
+                <div class="badge">
+                    ${ex.muscolo}
+                </div>
+
+                <h3 class="exercise-title">
+                    ${ex.nome}
+                </h3>
+
+                <div class="exercise-info">
+
+                    <strong>Serie:</strong>
+                    ${volume}
+
+                    <div style="
+                    margin-top:15px;
+                    ">
+
+                    ${Array.from(
+                        {length: volume},
+                        (_,i) => `
+
+                    <label style="
+                    display:flex;
+                    align-items:center;
+                    gap:10px;
+                    margin-top:10px;
+                    ">
+
+                    <input
+                    type="checkbox"
+                    class="serie-check">
+
+                    Serie ${i+1}
+
+                    </label>
+
+                    `
+                    ).join("")}
+
+                    </div>
+
+                    <p>
+                    <strong>Reps:</strong>
+                    ${reps}
+                    </p>
+
+                    <p>
+                    <strong>Recupero:</strong>
+                    ${recupero}
+                    </p>
+
+                    <p style="
+                    margin-top:10px;
+                    color:#22c55e;
+                    font-weight:bold;
+                    ">
+
+                    ${noteAI}
+
+                    </p>
+
+                    <div style="
+                    margin-top:15px;
+                    ">
+
+                    <button
+                    class="btn-primary"
+                    onclick="avviaTimer(
+                    '${recupero}',
+                    '${giorno}-${index}'
+                    )">
+
+                    AVVIA TIMER
+
+                    </button>
+
+                    <div
+                    id="timer-${giorno}-${index}"
+                    style="
+                    margin-top:10px;
+                    font-size:22px;
+                    font-weight:bold;
+                    color:#22c55e;
+                    ">
+
+                    </div>
+
+                    </div>
+
+                    <br><br>
+
+                    <input
+                    type="number"
+                    placeholder="Peso usato (kg)"
+                    id="peso-${giorno}-${index}"
+                    >
+
+                    <input
+                    type="number"
+                    placeholder="Reps completate"
+                    id="reps-${giorno}-${index}"
+                    >
+
+                    <button
+                    class="btn-primary"
+                    onclick="analizzaProgressione(
+                    '${giorno}-${index}',
+                    '${ex.nome}'
+                    )">
+
+                    Analizza Progressione
+
+                    </button>
+
+                    <div
+                    id="risultato-${giorno}-${index}"
+                    style="
+                    margin-top:15px;
+                    font-weight:bold;
+                    color:#22c55e;
+                    ">
+                    </div>
+
+                    <br>
+
+                    <p>
+                    <strong>Tecnica:</strong>
+                    ${ex.tecnica}
+                    </p>
+
+                    <br>
+
+                    <p>
+                    <strong>Errori:</strong>
+                    ${ex.errori}
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        `;
+
+    }).join("")}
+
+    </div>
+
+    </div>
+
+    `;
+
+});
+
+        /* =========================
+           MOSTRA PROGRAMMA
+        ========================= */
+
+        document.getElementById(
+            "programma"
+        ).style.display = "block";
+
+        /* =========================
+           SALVATAGGIO FIREBASE
+        ========================= */
+
+        await db.collection(
+            "piani_allenamento"
+        ).add({
+
+            userId: userId,
+
+            split: split,
+
+            volume: volume,
+
+            intensity: intensity,
+
+            data:
+                new Date()
+
+        });
+
+    }
+
+    catch (errore) {
+
+        console.error(
+            "Errore:",
+            errore
+        );
+
+    }
+
+}
+
+/* =========================
+CARICA ULTIMO ALLENAMENTO
+========================= */
+
+async function caricaUltimoAllenamento() {
+
+    alert(
+        "Sistema storico allenamenti premium in sviluppo"
+    );
+
+}
+
+/* =========================
+PROGRESSIONE
+========================= */
+
+async function progressioneAllenamento() {
+
+    try {
+
+        const userId =
+            localStorage.getItem("userId");
+
+        const snapshot =
+            await db.collection("progressi")
+
+                .where("userId", "==", userId)
+
+                .get();
+
+        if (snapshot.empty) {
+
+            alert(
+                "Nessun progresso registrato"
+            );
+
+            return;
+
+        }
+
+        let lista = [];
+
+        snapshot.forEach(doc => {
+
+            lista.push(
+                doc.data()
+            );
+
+        });
+
+        lista.sort(
+            (a, b) =>
+            new Date(a.data)
+            -
+            new Date(b.data)
+        );
+
+        let primoPeso =
+            parseFloat(
+                lista[0].peso
+            );
+
+        let ultimoPeso =
+            parseFloat(
+                lista[
+                    lista.length - 1
+                ].peso
+            );
+
+        let diff =
+            ultimoPeso -
+            primoPeso;
+
+        let msg = "";
+
+        if (diff > 1)
+
+            msg =
+            "Peso aumentato.\nAumentare carichi.";
+
+        else if (diff < -1)
+
+            msg =
+            "Peso diminuito.\nAggiungere cardio.";
+
+        else
+
+            msg =
+            "Peso stabile.\nContinuare.";
+
+        alert(msg);
+
+    }
+
+    catch (errore) {
+
+        console.error(
+            errore
+        );
+
+    }
+
+}
+
+const timersAttivi = {};
+
+function formatTime(
+    seconds
+){
+
+    const minuti =
+        Math.floor(
+            seconds / 60
+        );
+
+    const secondi =
+        seconds % 60;
+
+    return `
+
+    ${minuti}
+    :
+    ${secondi
+        .toString()
+        .padStart(2,"0")
+    }
+
+    `;
+
+}
+
+function avviaTimer(
+    recupero,
+    index
+){
+
+    /* =====================
+       BLOCCA TIMER DOPPI
+    ===================== */
+
+    if(timersAttivi[index]){
+
+        clearInterval(
+            timersAttivi[index]
+        );
+
+    }
+
+    let secondi = 90;
+
+    if(recupero.includes("120"))
+        secondi = 120;
+
+    if(recupero.includes("45"))
+        secondi = 45;
+
+    const timerBox =
+        document.getElementById(
+            `timer-${index}`
+        );
+
+    let tempo =
+        secondi;
+
+    timerBox.innerText =
+    formatTime(tempo);
+
+    timersAttivi[index] =
+        setInterval(() => {
+
+        tempo--;
+
+        timerBox.innerText =
+    formatTime(tempo);
+
+    if(tempo <= 15){
+
+    timerBox.style.color =
+        "#ef4444";
+
+}
+
+else if(tempo <= 30){
+
+    timerBox.style.color =
+        "#f59e0b";
+
+}
+
+else{
+
+    timerBox.style.color =
+        "#22c55e";
+
+}
+
+        if(tempo <= 0){
+
+            clearInterval(
+                timersAttivi[index]
+            );
+
+            timerBox.innerText =
+                "SERIE SUCCESSIVA";
+
+            delete timersAttivi[index];
+
+            const audio =
+                new Audio(
+                    "https://actions.google.com/sounds/v1/alarms/beep_short.ogg"
+                );
+
+            audio.play();
+
+        }
+
+    },1000);
+
+}
+
+document.addEventListener(
+    "change",
+    () => {
+
+    const checks =
+        document.querySelectorAll(
+            ".serie-check"
+        );
+
+    const completate =
+        document.querySelectorAll(
+            ".serie-check:checked"
+        );
+
+    const totale =
+        checks.length;
+
+    const fatte =
+        completate.length;
+
+    let percentuale = 0;
+
+if(totale > 0){
+
+    percentuale =
+        Math.round(
+            (fatte / totale) * 100
+        );
+
+}
+
+    document.getElementById(
+        "workoutProgressBox"
+    ).style.display = "block";
+
+    document.getElementById(
+        "workoutProgressBar"
+    ).style.width =
+        percentuale + "%";
+
+    document.getElementById(
+        "workoutProgressText"
+    ).innerText =
+
+        percentuale +
+        "% completato";
+
+});
+
+function tornaMenu() {
+
+    window.location.href =
+        "dashboard.html";
+
+}
+
+async function analizzaProgressione(
+    index,
+    nomeEsercizio
+){
+
+    try{
+
+        const peso =
+            document.getElementById(
+                `peso-${index}`
+            ).value;
+
+        const reps =
+            document.getElementById(
+                `reps-${index}`
+            ).value;
+
+        if(!peso || !reps){
+
+            alert(
+                "Inserisci peso e reps"
+            );
+
+            return;
+
+        }
+
+        const analisi =
+            progressionEngine.analyze({
+
+                peso,
+                reps
+
+            });
+
+        document.getElementById(
+            `risultato-${index}`
+        ).innerHTML = `
+
+        ${analisi.consiglio}
+        <br>
+        Nuovo peso consigliato:
+        ${analisi.nuovoPeso} kg
+
+        `;
+
+        /* =====================
+           SALVATAGGIO FIREBASE
+        ===================== */
+
+        const userId =
+            localStorage.getItem(
+                "userId"
+            );
+
+        await db.collection(
+            "carichi"
+        ).add({
+
+            userId,
+
+            esercizio:
+                nomeEsercizio,
+
+            peso:
+                parseFloat(peso),
+
+            reps:
+                parseInt(reps),
+
+            nuovoPeso:
+                analisi.nuovoPeso,
+
+            data:
+                new Date()
+
+        });
+
+    }
+
+    catch(errore){
+
+        console.error(
+            errore
+        );
+
+    }
+
+}
+
+</script>
+
+</body>
+</html>

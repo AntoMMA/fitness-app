@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>Dashboard</title>
+
+<link rel="stylesheet" href="style.css">
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+<script src="firebase.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+</head>
+<body>
+
+<div class="container">
+
+    <h2>
+        FITNESS PERFORMANCE DASHBOARD
+    </h2>
+
+    <!-- STATS -->
+
+    <div class="stats">
+
+        <div class="stat-box">
+            <div class="stat-number">92%</div>
+            <div class="stat-label">
+                Livello energia
+            </div>
+        </div>
+
+        <div class="stat-box">
+            <div class="stat-number">5</div>
+            <div class="stat-label">
+                Allenamenti settimana
+            </div>
+        </div>
+
+        <div class="stat-box">
+            <div class="stat-number">+2.4kg</div>
+            <div class="stat-label">
+                Massa muscolare
+            </div>
+        </div>
+
+        <div class="stat-box">
+            <div class="stat-number">14%</div>
+            <div class="stat-label">
+                Massa grassa
+            </div>
+        </div>
+
+    </div>
+
+    <!-- MENU -->
+
+    <div class="menu-grid">
+
+        <div class="dashboard-card">
+
+            <h3>Profilo</h3>
+
+            <p>
+                Gestisci dati fisici,
+                metabolismo e obiettivi.
+            </p>
+
+            <br>
+
+            <button
+                class="btn-secondary"
+                onclick="vaiProfilo()">
+
+                Apri Profilo
+
+            </button>
+
+        </div>
+
+        <div class="dashboard-card">
+
+            <h3>Allenamento AI</h3>
+
+            <p>
+                Programma intelligente
+                adattivo professionale.
+            </p>
+
+            <br>
+
+            <button
+                class="btn-primary"
+                onclick="vaiAllenamento()">
+
+                Vai Allenamento
+
+            </button>
+
+        </div>
+
+        <div class="dashboard-card">
+
+            <h3>Alimentazione</h3>
+
+            <p>
+                Nutrizione personalizzata
+                avanzata.
+            </p>
+
+            <br>
+
+            <button
+                class="btn-secondary"
+                onclick="vaiAlimentazione()">
+
+                Vai Alimentazione
+
+            </button>
+
+        </div>
+
+        <div class="dashboard-card">
+
+            <h3>Progressi</h3>
+
+            <p>
+                Analizza andamento,
+                peso e performance.
+            </p>
+
+            <br>
+
+            <button
+                class="btn-secondary"
+                onclick="vaiProgressi()">
+
+                Apri Progressi
+
+            </button>
+
+        </div>
+
+        <div class="dashboard-card">
+
+            <h3>Analisi Fisica</h3>
+
+            <p>
+                Composizione corporea,
+                BMI e massa magra.
+            </p>
+
+            <br>
+
+            <button
+                class="btn-secondary"
+                onclick="vaiAnalisi()">
+
+                Vai Analisi
+
+            </button>
+
+        </div>
+
+        <div class="dashboard-card">
+
+            <h3>Report PDF</h3>
+
+            <p>
+                Genera report professionale
+                completo.
+            </p>
+
+            <br>
+
+            <button
+                class="btn-secondary"
+                onclick="generaReportPDF()">
+
+                Genera PDF
+
+            </button>
+
+        </div>
+
+    </div>
+
+    <br><br>
+
+    <!-- PROMEMORIA -->
+
+    <div class="card">
+
+        <h3>
+            Promemoria Allenamento
+        </h3>
+
+        <br>
+
+        <input
+            type="time"
+            id="orarioAllenamento">
+
+        <button
+            class="btn-primary"
+            onclick="impostaPromemoria()">
+
+            Imposta Promemoria
+
+        </button>
+
+    </div>
+
+    <br>
+
+    <button
+        class="btn-danger"
+        onclick="logout()">
+
+        Logout
+
+    </button>
+
+</div>
+
+</body>
+</html>
